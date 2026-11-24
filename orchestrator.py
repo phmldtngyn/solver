@@ -245,7 +245,43 @@ def main():
         encoding="utf-8",
     )
     print(f"\n=== HOÀN TẤT! Xem báo cáo tổng hợp tại: {final_report} ===")
+# --- CẬP NHẬT SỔ CHECKPOINT LIÊN TỤC ---
+    logs_dir = Path("logs")
+    logs_dir.mkdir(exist_ok=True)
 
+    # 1. Ghi nối tiếp vào sổ nhật ký checkpoint (lưu vĩnh viễn mọi vòng chạy)
+    ledger_file = logs_dir / "checkpoint_ledger.md"
+    ledger_entry = (
+        f"\n## Phiên `{ts}` — Bài toán {args.problem} ({'DRY-RUN' if args.dry_run else 'LIVE'})\n"
+        f"- **Thư mục output:** `{run_dir.as_posix()}`\n"
+        f"- **Mục tiêu:** {goal}\n"
+        f"- **Local Sandbox (GLM 5.3):** `{local_sandbox_log.splitlines()[0] if local_sandbox_log else 'N/A'}`\n"
+        f"- **Numeric Sandbox (Qwen 4):** `{numeric_sandbox_log.splitlines()[0] if numeric_sandbox_log else 'N/A'}`\n"
+        f"- **Tóm tắt & Đề xuất cập nhật trạng thái (Sonnet 5.5):**\n\n{outputs['7_latex']}\n\n---\n"
+    )
+    with ledger_file.open("a", encoding="utf-8") as f:
+        f.write(ledger_entry)
+
+    # 2. Cập nhật file checkpoint JSON hiện hành trong core/ (để vòng chạy sau tự đọc)
+    if not args.dry_run:
+        ckpt_path = Path(cfg["project"].get("core_dir", "core")) / "02_CHECKPOINT.json"
+        ckpt_data = {}
+        if ckpt_path.exists():
+            try:
+                ckpt_data = json.loads(ckpt_path.read_text(encoding="utf-8"))
+            except json.JSONDecodeError:
+                ckpt_data = {}
+        history = ckpt_data.setdefault("run_history", [])
+        history.append({
+            "timestamp": ts,
+            "problem": args.problem,
+            "run_dir": run_dir.as_posix(),
+            "goal": goal,
+            "auditor_summary": outputs["6_auditor"][:1500],
+        })
+        ckpt_data["last_updated"] = ts
+        ckpt_data["latest_run_dir"] = run_dir.as_posix()
+        ckpt_path.write_text(json.dumps(ckpt_data, ensure_ascii=False, indent=2), encoding="utf-8")
 
 if __name__ == "__main__":
     main()
