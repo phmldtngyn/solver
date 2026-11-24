@@ -1,6 +1,11 @@
+﻿import os
+
+# Khóa cố định 4 luồng CPU cho các tiến trình con (numpy/scipy/sympy) khi gọi thẳng Python
+for _env_var in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "NUMEXPR_NUM_THREADS"):
+    os.environ.setdefault(_env_var, "4")
+
 import argparse
 import json
-import os
 from datetime import datetime
 from pathlib import Path
 
@@ -168,7 +173,7 @@ def main():
         dry_run=args.dry_run,
     )
 
-    # 4. Local Code (GLM 5.3) + chạy sandbox
+    # 4. Local Code (GLM 5.3 sinh code -> Sandbox chạy trên CPU local)
     outputs["4_local_code"] = call_agent(
         "4_local_code",
         agents["4_local_code"],
@@ -182,7 +187,7 @@ def main():
     (run_dir / "4_local_sandbox.log").write_text(local_sandbox_log, encoding="utf-8")
     print(f"    Kết quả Sandbox (Local Code):\n{local_sandbox_log}")
 
-    # 5. Numeric Verifier (Qwen 4) + chạy sandbox
+    # 5. Numeric Verifier (Qwen 4 sinh code -> Sandbox chạy đối chiếu trên CPU local)
     outputs["5_numeric_verifier"] = call_agent(
         "5_numeric_verifier",
         agents["5_numeric_verifier"],
@@ -226,7 +231,7 @@ def main():
     final_report = run_dir / "FINAL_REPORT.md"
     final_report.write_text(
         f"# BÁO CÁO PHIÊN NGHIÊN CỨU — {prob_cfg['title']}\n\n"
-        f"**Thời gian:** {ts}\n**Chế độ:** {'DRY-RUN (Kiểm thử luồng)' if args.dry_run else 'LIVE (OpenRouter + Local GLM 5.3)'}\n"
+        f"**Thời gian:** {ts}\n**Chế độ:** {'DRY-RUN (Kiểm thử luồng)' if args.dry_run else 'LIVE (OpenRouter + Local Sandbox)'}\n"
         f"**Mục tiêu:** {goal}\n\n---\n\n"
         f"## 1. Chỉ thị Chủ điều hành (Fable 5.2)\n{outputs['1_commander']}\n\n---\n\n"
         f"## 2. Phân rã Điều phối (Opus 5.5)\n{outputs['2_coordinator']}\n\n---\n\n"
@@ -244,25 +249,19 @@ def main():
         ),
         encoding="utf-8",
     )
-    print(f"\n=== HOÀN TẤT! Xem báo cáo tổng hợp tại: {final_report} ===")
-# --- CẬP NHẬT SỔ CHECKPOINT LIÊN TỤC ---
+
+    # Cập nhật sổ checkpoint liên tục
     logs_dir = Path("logs")
     logs_dir.mkdir(exist_ok=True)
-
-    # 1. Ghi nối tiếp vào sổ nhật ký checkpoint (lưu vĩnh viễn mọi vòng chạy)
     ledger_file = logs_dir / "checkpoint_ledger.md"
-    ledger_entry = (
-        f"\n## Phiên `{ts}` — Bài toán {args.problem} ({'DRY-RUN' if args.dry_run else 'LIVE'})\n"
-        f"- **Thư mục output:** `{run_dir.as_posix()}`\n"
-        f"- **Mục tiêu:** {goal}\n"
-        f"- **Local Sandbox (GLM 5.3):** `{local_sandbox_log.splitlines()[0] if local_sandbox_log else 'N/A'}`\n"
-        f"- **Numeric Sandbox (Qwen 4):** `{numeric_sandbox_log.splitlines()[0] if numeric_sandbox_log else 'N/A'}`\n"
-        f"- **Tóm tắt & Đề xuất cập nhật trạng thái (Sonnet 5.5):**\n\n{outputs['7_latex']}\n\n---\n"
-    )
     with ledger_file.open("a", encoding="utf-8") as f:
-        f.write(ledger_entry)
+        f.write(
+            f"\n## Phiên `{ts}` — Bài toán {args.problem} ({'DRY-RUN' if args.dry_run else 'LIVE'})\n"
+            f"- **Thư mục output:** `{run_dir.as_posix()}`\n"
+            f"- **Mục tiêu:** {goal}\n"
+            f"- **Tóm tắt & Đề xuất cập nhật trạng thái (Sonnet 5.5):**\n\n{outputs['7_latex']}\n\n---\n"
+        )
 
-    # 2. Cập nhật file checkpoint JSON hiện hành trong core/ (để vòng chạy sau tự đọc)
     if not args.dry_run:
         ckpt_path = Path(cfg["project"].get("core_dir", "core")) / "02_CHECKPOINT.json"
         ckpt_data = {}
@@ -271,8 +270,7 @@ def main():
                 ckpt_data = json.loads(ckpt_path.read_text(encoding="utf-8"))
             except json.JSONDecodeError:
                 ckpt_data = {}
-        history = ckpt_data.setdefault("run_history", [])
-        history.append({
+        ckpt_data.setdefault("run_history", []).append({
             "timestamp": ts,
             "problem": args.problem,
             "run_dir": run_dir.as_posix(),
@@ -282,6 +280,9 @@ def main():
         ckpt_data["last_updated"] = ts
         ckpt_data["latest_run_dir"] = run_dir.as_posix()
         ckpt_path.write_text(json.dumps(ckpt_data, ensure_ascii=False, indent=2), encoding="utf-8")
+
+    print(f"\n=== HOÀN TẤT! Xem báo cáo tổng hợp tại: {final_report} ===")
+
 
 if __name__ == "__main__":
     main()

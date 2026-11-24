@@ -1,114 +1,111 @@
-# Cấu hình hệ thống 7 Agent nghiên cứu (OpenRouter + Local GLM 5.3)
 project:
-  title: "Một thác nhân Poisson tự điều tiết trên đường tròn"
-  core_dir: "core"
-  context_dir: "context"
-  tex_dir: "tex_sections"
-  runs_dir: "runs"
-  dependency_map_file: "tong_hop_dinh_ly_va_dinh_nghia.md"
-  roadmap_file: "con_duong_toi_Aa_va_bai_toan_mo.md"
-
+  title: Mot thac nhan Poisson tu dieu tiet tren duong tron
+  core_dir: core
+  context_dir: context
+  tex_dir: tex_sections
+  runs_dir: runs
+  dependency_map_file: tong_hop_dinh_ly_va_dinh_nghia.md
+  roadmap_file: con_duong_toi_Aa_va_bai_toan_mo.md
 agents:
   1_commander:
-    name: "Chủ điều hành (Commander & Chief Strategist)"
-    provider: "openrouter"
-    model: "anthropic/claude-fable-5.2:floor"
+    name: Chu dieu hanh (Commander & Chief Strategist)
+    provider: openrouter
+    model: anthropic/claude-fable-5.2
     temperature: 0.25
     max_tokens: 4096
-
   2_coordinator:
-    name: "Điều phối (Coordinator & Lemma Decomposer)"
-    provider: "openrouter"
-    model: "anthropic/claude-opus-5.5:floor"
+    name: Dieu phoi (Coordinator & Lemma Decomposer)
+    provider: openrouter
+    model: anthropic/claude-opus-5.5
     temperature: 0.2
     max_tokens: 6144
-
   3_prover:
-    name: "Prover (Analytical Prover)"
-    provider: "openrouter"
-    model: "google/gemini-4-neon:floor"
+    name: Prover (Analytical Prover)
+    provider: openrouter
+    model: google/gemini-4-neon
     temperature: 0.2
     max_tokens: 8192
-
   4_local_code:
-    name: "Local Code (Local Simulation & Symbolic Script)"
-    provider: "local"
-    model: "glm-5.3"
+    name: Local Code (Simulation & Symbolic Script)
+    provider: openrouter
+    model: z-ai/glm-5.3
     temperature: 0.1
     max_tokens: 4096
-
   5_numeric_verifier:
-    name: "Numeric Verifier (Independent Numerical Audit)"
-    provider: "openrouter"
-    model: "qwen/qwen-4:floor"
+    name: Numeric Verifier (Independent Numerical Audit)
+    provider: openrouter
+    model: qwen/qwen4-max
     temperature: 0.1
     max_tokens: 4096
-
   6_auditor:
-    name: "Auditor (Rigor, Quantifier & Citation Auditor)"
-    provider: "openrouter"
-    model: "google/gemini-4-carbon:floor"
+    name: Auditor (Rigor, Quantifier & Citation Auditor)
+    provider: openrouter
+    model: google/gemini-4-carbon
     temperature: 0.1
     max_tokens: 8192
-
   7_latex:
-    name: "LaTeX Integrator (Manuscript Editor & State Summary)"
-    provider: "openrouter"
-    model: "anthropic/claude-sonnet-5.5:floor"
+    name: LaTeX Integrator (Manuscript Editor & State Summary)
+    provider: openrouter
+    model: anthropic/claude-sonnet-5.5
     temperature: 0.1
     max_tokens: 8192
-
 open_problems:
   1:
-    title: "Bài toán 1: Phân phối cục bộ quanh khuyết tật (LV-Palm) và quanh ngưỡng (B+-atom)"
+    title: 'Bai toan 1: Phan phoi cuc bo quanh khuyet tat (LV-Palm) va quanh nguong
+      (B+-atom)'
     tex_files:
-      - "sec09_05.tex"
-      - "sec09_10.tex"
-      - "sec10_06.tex"
-      - "sec10_16.tex"
-      - "sec10_60.tex"
-      - "sec10_61.tex"
-    default_goal: >
-      Phân tích cấu trúc quỹ đạo sinh ra tập sai khác U khi ép nhận một cung S_w,
-      tìm điều kiện đủ để chứng minh (LV-Palm) hoặc (B+-atom) mà không vi phạm phản ví dụ ở Mục 10.60.
+    - sec09_05.tex
+    - sec09_10.tex
+    - sec10_06.tex
+    - sec10_16.tex
+    - sec10_60.tex
+    - sec10_61.tex
+    default_goal: 'Phan tich cau truc quy dao sinh ra tap sai khac U khi ep nhan mot
+      cung S_w, tim dieu kien du de chung minh (LV-Palm) hoac (B+-atom) ma khong vi
+      pham phan vi du o Muc 10.60.
 
+      '
   2:
-    title: "Bài toán 2: Hai cận của hệ số hồi phục C_0 <= C_l <= C+ và (QT) bậc bốn"
+    title: 'Bai toan 2: Hai can cua he so hoi phuc C_0 <= C_l <= C+ va (QT) bac bon'
     tex_files:
-      - "sec02.tex"
-      - "sec07.tex"
-      - "sec10_18.tex"
-      - "sec10_24.tex"
-      - "sec10_59.tex"
-      - "sec10_67.tex"
-    default_goal: >
-      Chứng minh (LE) cân bằng cục bộ và (B-) hai điểm ở thang thô để khép chặt cận dưới C_l >= C_0 > 0
-      theo Định lý 10.148, hoặc chứng minh (QT) bậc bốn cho Định lý 10.169.
+    - sec02.tex
+    - sec07.tex
+    - sec10_18.tex
+    - sec10_24.tex
+    - sec10_59.tex
+    - sec10_67.tex
+    default_goal: 'Chung minh (LE) can bang cuc bo va (B-) hai diem o thang tho de
+      khep chat can duoi C_l >= C_0 > 0 theo Dinh ly 10.148, hoac chung minh (QT)
+      bac bon cho Dinh ly 10.169.
 
+      '
   3:
-    title: "Bài toán 3: Độ sâu của hõm — chặn đều sup_t E[V_r] <= C ở thang thô"
+    title: 'Bai toan 3: Do sau cua hom -- chan deu sup_t E[V_r] <= C o thang tho'
     tex_files:
-      - "sec09_03.tex"
-      - "sec10_15.tex"
-      - "sec10_34.tex"
-      - "sec10_64.tex"
-      - "sec10_66.tex"
-      - "sec10_67.tex"
-    default_goal: >
-      Sử dụng đẳng thức hồi phục theo tầng (Mệnh đề 10.178: dV_r/dGamma = -2 C_{u,r} V_r + nu_r)
-      hoặc chặn tuổi tái sinh A(y) (Bổ đề 10.171) để chứng minh sup_t E[V_r] <= C với r >= Lambda * epsilon,
-      từ đó suy ra (F1) và (F2) qua Bổ đề 10.132.
+    - sec09_03.tex
+    - sec10_15.tex
+    - sec10_34.tex
+    - sec10_64.tex
+    - sec10_66.tex
+    - sec10_67.tex
+    default_goal: 'Su dung dang thuc hoi phuc theo tang (Menh de 10.178: dV_r/dGamma
+      = -2 C_{u,r} V_r + nu_r) hoac chan tuoi tai sinh A(y) (Bo de 10.171) de chung
+      minh sup_t E[V_r] <= C voi r >= Lambda * epsilon, tu do suy ra (F1) va (F2)
+      qua Bo de 10.132.
 
+      '
   4:
-    title: "Bài toán 4: Đi vào dải từ pha nóng khi độ gồ ghề W_r còn lớn"
+    title: 'Bai toan 4: Di vao dai tu pha nong khi do go ghe W_r con lon'
     tex_files:
-      - "sec07_04.tex"
-      - "sec09_09.tex"
-      - "sec10_16.tex"
-      - "sec10_46.tex"
-      - "sec10_47.tex"
-      - "sec10_49.tex"
-    default_goal: >
-      Xây dựng hàm Lyapunov hai biến V = eta - beta * sum_j w_j W_{r_j} (r_j / epsilon)
-      kết hợp Bổ đề 10.110, Mệnh đề 10.27 và Mệnh đề 10.123 để chứng minh sau t_h (khi theta_t <= 1),
-      hệ đi vào vùng eta >= eta_b và sup_{r >= Lambda*epsilon} W_r (r/epsilon) <= M với xác suất -> 1.
+    - sec07_04.tex
+    - sec09_09.tex
+    - sec10_16.tex
+    - sec10_46.tex
+    - sec10_47.tex
+    - sec10_49.tex
+    default_goal: 'Xay dung ham Lyapunov hai bien V = eta - beta * sum_j w_j W_{r_j}
+      (r_j / epsilon) ket hop Bo de 10.110, Menh de 10.27 va Menh de 10.123 de chung
+      minh sau t_h (khi theta_t <= 1), he di vao vung eta >= eta_b va sup_{r >= Lambda*epsilon}
+      W_r (r/epsilon) <= M voi xac suat -> 1.
+
+      '
