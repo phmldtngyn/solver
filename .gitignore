@@ -1,7 +1,16 @@
+# Môi trường & bảo mật
 .env
+.env.*
+!.env.example
 .venv/
+venv/
+__pycache__/
+*.py[cod]
+
+# Dữ liệu chạy & log tạm
 runs/
 logs/
-__pycache__/
-*.tmp
-*.bak.json
+output/
+*.log
+.DS_Store
+Thumbs.db

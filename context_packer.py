@@ -18,9 +18,10 @@ def clean_latex_source(tex: str) -> str:
 
 
 def load_core_state(core_dir: str = "core") -> str:
+    """Nạp toàn bộ tệp trạng thái và hiến pháp trong thư mục core/."""
     cdir = Path(core_dir)
     if not cdir.exists():
-        return ""
+        return "[CẢNH BÁO: Không tìm thấy thư mục core/]"
     blocks = []
     for cf in sorted(cdir.glob("*")):
         if cf.is_file():

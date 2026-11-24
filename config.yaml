@@ -1,64 +1,63 @@
-# Cấu hình hệ thống 7 Agent nghiên cứu qua OpenRouter
+# Cấu hình hệ thống 7 Agent nghiên cứu (OpenRouter + Local GLM 5.3)
 project:
   title: "Một thác nhân Poisson tự điều tiết trên đường tròn"
+  core_dir: "core"
   context_dir: "context"
   tex_dir: "tex_sections"
   runs_dir: "runs"
   dependency_map_file: "tong_hop_dinh_ly_va_dinh_nghia.md"
   roadmap_file: "con_duong_toi_Aa_va_bai_toan_mo.md"
 
-# Cấu hình 7 Agent (có thể thay đổi model slug theo danh sách trên OpenRouter)
 agents:
-  1_architect:
-    name: "Architect & Proof Strategist"
+  1_commander:
+    name: "Chủ điều hành (Commander & Chief Strategist)"
     provider: "openrouter"
-    model: "anthropic/claude-sonnet-4.6"
-    temperature: 0.3
+    model: "anthropic/claude-fable-5.2:floor"
+    temperature: 0.25
     max_tokens: 4096
 
-  2_prover_main:
-    name: "Primary Analytical Prover"
+  2_coordinator:
+    name: "Điều phối (Coordinator & Lemma Decomposer)"
     provider: "openrouter"
-    model: "anthropic/claude-opus-4.6"
+    model: "anthropic/claude-opus-5.5:floor"
     temperature: 0.2
-    max_tokens: 8192
-
-  3_prover_alt:
-    name: "Alternative Route & Counterexample Explorer"
-    provider: "openrouter"
-    model: "google/gemini-2.5-pro"
-    temperature: 0.4
-    max_tokens: 8192
-
-  4_numeric_verifier:
-    name: "Numerical & Symbolic Verifier (Python)"
-    provider: "openrouter"
-    model: "deepseek/deepseek-r1"
-    temperature: 0.1
-    max_tokens: 4096
-
-  5_rigor_auditor:
-    name: "Rigor, Quantifier & Citation Auditor"
-    provider: "openrouter"
-    model: "openai/o3"
-    temperature: 0.1
-    max_tokens: 8192
-
-  6_latex_integrator:
-    name: "LaTeX & Notation Integrator"
-    provider: "openrouter"
-    model: "anthropic/claude-sonnet-4.6"
-    temperature: 0.1
     max_tokens: 6144
 
-  7_synthesizer:
-    name: "State Synthesizer & Next-Step Planner"
+  3_prover:
+    name: "Prover (Analytical Prover)"
     provider: "openrouter"
-    model: "google/gemini-2.5-flash"
+    model: "google/gemini-4-neon:floor"
     temperature: 0.2
+    max_tokens: 8192
+
+  4_local_code:
+    name: "Local Code (Local Simulation & Symbolic Script)"
+    provider: "local"
+    model: "glm-5.3"
+    temperature: 0.1
     max_tokens: 4096
 
-# Ánh xạ 4 bài toán mở tới các file .tex liên quan trực tiếp
+  5_numeric_verifier:
+    name: "Numeric Verifier (Independent Numerical Audit)"
+    provider: "openrouter"
+    model: "qwen/qwen-4:floor"
+    temperature: 0.1
+    max_tokens: 4096
+
+  6_auditor:
+    name: "Auditor (Rigor, Quantifier & Citation Auditor)"
+    provider: "openrouter"
+    model: "google/gemini-4-carbon:floor"
+    temperature: 0.1
+    max_tokens: 8192
+
+  7_latex:
+    name: "LaTeX Integrator (Manuscript Editor & State Summary)"
+    provider: "openrouter"
+    model: "anthropic/claude-sonnet-5.5:floor"
+    temperature: 0.1
+    max_tokens: 8192
+
 open_problems:
   1:
     title: "Bài toán 1: Phân phối cục bộ quanh khuyết tật (LV-Palm) và quanh ngưỡng (B+-atom)"
