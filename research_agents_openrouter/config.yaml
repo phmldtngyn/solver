@@ -1,0 +1,115 @@
+# Cấu hình hệ thống 7 Agent nghiên cứu qua OpenRouter
+project:
+  title: "Một thác nhân Poisson tự điều tiết trên đường tròn"
+  context_dir: "context"
+  tex_dir: "tex_sections"
+  runs_dir: "runs"
+  dependency_map_file: "tong_hop_dinh_ly_va_dinh_nghia.md"
+  roadmap_file: "con_duong_toi_Aa_va_bai_toan_mo.md"
+
+# Cấu hình 7 Agent (có thể thay đổi model slug theo danh sách trên OpenRouter)
+agents:
+  1_architect:
+    name: "Architect & Proof Strategist"
+    provider: "openrouter"
+    model: "anthropic/claude-sonnet-4.6"
+    temperature: 0.3
+    max_tokens: 4096
+
+  2_prover_main:
+    name: "Primary Analytical Prover"
+    provider: "openrouter"
+    model: "anthropic/claude-opus-4.6"
+    temperature: 0.2
+    max_tokens: 8192
+
+  3_prover_alt:
+    name: "Alternative Route & Counterexample Explorer"
+    provider: "openrouter"
+    model: "google/gemini-2.5-pro"
+    temperature: 0.4
+    max_tokens: 8192
+
+  4_numeric_verifier:
+    name: "Numerical & Symbolic Verifier (Python)"
+    provider: "openrouter"
+    model: "deepseek/deepseek-r1"
+    temperature: 0.1
+    max_tokens: 4096
+
+  5_rigor_auditor:
+    name: "Rigor, Quantifier & Citation Auditor"
+    provider: "openrouter"
+    model: "openai/o3"
+    temperature: 0.1
+    max_tokens: 8192
+
+  6_latex_integrator:
+    name: "LaTeX & Notation Integrator"
+    provider: "openrouter"
+    model: "anthropic/claude-sonnet-4.6"
+    temperature: 0.1
+    max_tokens: 6144
+
+  7_synthesizer:
+    name: "State Synthesizer & Next-Step Planner"
+    provider: "openrouter"
+    model: "google/gemini-2.5-flash"
+    temperature: 0.2
+    max_tokens: 4096
+
+# Ánh xạ 4 bài toán mở tới các file .tex liên quan trực tiếp
+open_problems:
+  1:
+    title: "Bài toán 1: Phân phối cục bộ quanh khuyết tật (LV-Palm) và quanh ngưỡng (B+-atom)"
+    tex_files:
+      - "sec09_05.tex"
+      - "sec09_10.tex"
+      - "sec10_06.tex"
+      - "sec10_16.tex"
+      - "sec10_60.tex"
+      - "sec10_61.tex"
+    default_goal: >
+      Phân tích cấu trúc quỹ đạo sinh ra tập sai khác U khi ép nhận một cung S_w,
+      tìm điều kiện đủ để chứng minh (LV-Palm) hoặc (B+-atom) mà không vi phạm phản ví dụ ở Mục 10.60.
+
+  2:
+    title: "Bài toán 2: Hai cận của hệ số hồi phục C_0 <= C_l <= C+ và (QT) bậc bốn"
+    tex_files:
+      - "sec02.tex"
+      - "sec07.tex"
+      - "sec10_18.tex"
+      - "sec10_24.tex"
+      - "sec10_59.tex"
+      - "sec10_67.tex"
+    default_goal: >
+      Chứng minh (LE) cân bằng cục bộ và (B-) hai điểm ở thang thô để khép chặt cận dưới C_l >= C_0 > 0
+      theo Định lý 10.148, hoặc chứng minh (QT) bậc bốn cho Định lý 10.169.
+
+  3:
+    title: "Bài toán 3: Độ sâu của hõm — chặn đều sup_t E[V_r] <= C ở thang thô"
+    tex_files:
+      - "sec09_03.tex"
+      - "sec10_15.tex"
+      - "sec10_34.tex"
+      - "sec10_64.tex"
+      - "sec10_66.tex"
+      - "sec10_67.tex"
+    default_goal: >
+      Sử dụng đẳng thức hồi phục theo tầng (Mệnh đề 10.178: dV_r/dGamma = -2 C_{u,r} V_r + nu_r)
+      hoặc chặn tuổi tái sinh A(y) (Bổ đề 10.171) để chứng minh sup_t E[V_r] <= C với r >= Lambda * epsilon,
+      từ đó suy ra (F1) và (F2) qua Bổ đề 10.132.
+
+  4:
+    title: "Bài toán 4: Đi vào dải từ pha nóng khi độ gồ ghề W_r còn lớn"
+    tex_files:
+      - "sec07_04.tex"
+      - "sec09_09.tex"
+      - "sec10_16.tex"
+      - "sec10_46.tex"
+      - "sec10_47.tex"
+      - "sec10_49.tex"
+    default_goal: >
+      Xây dựng hàm Lyapunov hai biến V = eta - beta * sum_j w_j W_{r_j} (r_j / epsilon)
+      kết hợp Bổ đề 10.110, Mệnh đề 10.27 và Mệnh đề 10.123 để chứng minh sau t_h (khi theta_t <= 1),
+      hệ đi vào vùng eta >= eta_b và sup_{r >= Lambda*epsilon} W_r (r/epsilon) <= M với xác suất -> 1.

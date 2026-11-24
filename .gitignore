@@ -1,0 +1,7 @@
+.env
+.venv/
+runs/
+logs/
+__pycache__/
+*.tmp
+*.bak.json

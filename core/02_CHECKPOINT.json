@@ -1,0 +1,23 @@
+{
+  "project_name": "final_theorem_sprint",
+  "workspace_root": "E:\\agent_work",
+  "status": "RUNNING",
+  "budget": {
+    "hard_limit_usd": 45.00,
+    "spent_usd": 0.00
+  },
+  "state": {
+    "current_iter": 1,
+    "recursion_depth": 0,
+    "current_step": "STEP_1_FABLE_STRATEGY",
+    "gate_status": "UNVERIFIED",
+    "counters": {
+      "glm_code_audit_retries": 0,
+      "glm_runtime_retries": 0,
+      "neon_carbon_loops": 0,
+      "fable_veto_loops": 0
+    }
+  },
+  "artifacts": {},
+  "last_error": null
+}
