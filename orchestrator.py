@@ -6,11 +6,12 @@ for _env_var in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "
 
 import argparse
 import json
+import time
 from datetime import datetime
 from pathlib import Path
 
 import yaml
-from openai import OpenAI
+from openai import OpenAI, APIStatusError, APIConnectionError, APITimeoutError
 
 from context_packer import build_shared_system_context
 from prompts import SYSTEM_ROLES
@@ -27,7 +28,8 @@ def load_env_file(env_path: str = ".env"):
             continue
         k, v = line.split("=", 1)
         val = v.strip().strip('"').strip("'")
-        os.environ.setdefault(k.strip(), val)
+        # .env được ưu tiên hơn biến môi trường cũ còn sót trong terminal
+        os.environ[k.strip()] = val
 
 
 def resolve_openrouter_key() -> str:
@@ -94,18 +96,56 @@ def call_agent(
     client = get_client(agent_cfg.get("provider", "openrouter"))
     system_msg = f"{SYSTEM_ROLES[agent_key]}\n\n========================================\n{shared_context}"
 
-    resp = client.chat.completions.create(
-        model=agent_cfg["model"],
-        messages=[
-            {"role": "system", "content": system_msg},
-            {"role": "user", "content": user_prompt},
-        ],
-        temperature=agent_cfg.get("temperature", 0.2),
-        max_tokens=agent_cfg.get("max_tokens", 4096),
-    )
+    extra_body = {}
+    if agent_cfg.get("reasoning_effort"):
+        extra_body["reasoning"] = {"effort": agent_cfg["reasoning_effort"]}
+    if agent_cfg.get("provider_order"):
+        extra_body["provider"] = {"order": agent_cfg["provider_order"]}
 
-    content = resp.choices[0].message.content or ""
     out_file = run_dir / f"{agent_key}.md"
+    resp = None
+    for attempt in range(1, 4):
+        try:
+            resp = client.chat.completions.create(
+                model=agent_cfg["model"],
+                messages=[
+                    {"role": "system", "content": system_msg},
+                    {"role": "user", "content": user_prompt},
+                ],
+                temperature=agent_cfg.get("temperature", 0.2),
+                max_tokens=agent_cfg.get("max_tokens", 4096),
+                extra_body=extra_body or None,
+                timeout=agent_cfg.get("timeout_sec", 900),
+            )
+            break
+        except APIStatusError as e:
+            body = e.response.text[:1000] if e.response is not None else str(e)
+            msg = f"[API ERROR {e.status_code}] {agent_key} ({agent_cfg['model']}): {body}"
+            print("    " + msg)
+            if e.status_code in (408, 429, 500, 502, 503, 504) and attempt < 3:
+                time.sleep(10 * attempt)
+                continue
+            out_file.write_text(msg, encoding="utf-8")
+            return msg
+        except (APIConnectionError, APITimeoutError) as e:
+            msg = f"[CONNECTION ERROR] {agent_key} ({agent_cfg['model']}): {e}"
+            print("    " + msg)
+            if attempt < 3:
+                time.sleep(10 * attempt)
+                continue
+            out_file.write_text(msg, encoding="utf-8")
+            return msg
+
+    choice = resp.choices[0]
+    content = choice.message.content or ""
+    finish = choice.finish_reason
+    if not content.strip():
+        content = (f"[EMPTY OUTPUT] {agent_key} ({agent_cfg['model']}) finish_reason={finish} — "
+                   f"có thể phần suy luận đã dùng hết max_tokens; hãy tăng max_tokens.")
+        print("    " + content)
+    elif finish == "length":
+        content += "\n\n[CẢNH BÁO: Đầu ra bị cắt do chạm max_tokens]"
+        print(f"    [CẢNH BÁO] {agent_key}: đầu ra bị cắt (finish_reason=length)")
     out_file.write_text(content, encoding="utf-8")
     print(f"    Đã lưu output tại: {out_file}")
     return content
@@ -141,7 +181,7 @@ def main():
     agents = cfg["agents"]
     outputs = {}
 
-    # 1. Chủ điều hành (Fable 5.2)
+    # 1. Chủ điều hành
     outputs["1_commander"] = call_agent(
         "1_commander",
         agents["1_commander"],
@@ -151,34 +191,34 @@ def main():
         dry_run=args.dry_run,
     )
 
-    # 2. Điều phối (Opus 5.5)
+    # 2. Điều phối
     outputs["2_coordinator"] = call_agent(
         "2_coordinator",
         agents["2_coordinator"],
         shared_context,
-        f"MỤC TIÊU:\n{goal}\n\nCHỈ THỊ TỪ CHỦ ĐIỀU HÀNH (FABLE 5.2):\n{outputs['1_commander']}\n\n"
+        f"MỤC TIÊU:\n{goal}\n\nCHỈ THỊ TỪ CHỦ ĐIỀU HÀNH:\n{outputs['1_commander']}\n\n"
         f"Hãy phân rã thành các bổ đề trung gian và giao việc cho Prover, Local Code, Numeric Verifier.",
         run_dir,
         dry_run=args.dry_run,
     )
 
-    # 3. Prover (Gemini 4 Neon)
+    # 3. Prover
     outputs["3_prover"] = call_agent(
         "3_prover",
         agents["3_prover"],
         shared_context,
-        f"MỤC TIÊU:\n{goal}\n\nKẾ HOẠCH PHÂN RÃ TỪ ĐIỀU PHỐI (OPUS 5.5):\n{outputs['2_coordinator']}\n\n"
+        f"MỤC TIÊU:\n{goal}\n\nKẾ HOẠCH PHÂN RÃ TỪ ĐIỀU PHỐI:\n{outputs['2_coordinator']}\n\n"
         f"Hãy viết chứng minh giải tích chi tiết từng bước.",
         run_dir,
         dry_run=args.dry_run,
     )
 
-    # 4. Local Code (GLM 5.3 sinh code -> Sandbox chạy trên CPU local)
+    # 4. Local Code (sinh code -> Sandbox chạy trên CPU local)
     outputs["4_local_code"] = call_agent(
         "4_local_code",
         agents["4_local_code"],
         shared_context,
-        f"KẾ HOẠCH TỪ ĐIỀU PHỐI:\n{outputs['2_coordinator']}\n\nCHỨNG MINH CỦA PROVER (NEON):\n{outputs['3_prover']}\n\n"
+        f"KẾ HOẠCH TỪ ĐIỀU PHỐI:\n{outputs['2_coordinator']}\n\nCHỨNG MINH CỦA PROVER:\n{outputs['3_prover']}\n\n"
         f"Hãy viết script Python chạy cục bộ để kiểm tra biểu thức/mô phỏng số.",
         run_dir,
         dry_run=args.dry_run,
@@ -187,13 +227,13 @@ def main():
     (run_dir / "4_local_sandbox.log").write_text(local_sandbox_log, encoding="utf-8")
     print(f"    Kết quả Sandbox (Local Code):\n{local_sandbox_log}")
 
-    # 5. Numeric Verifier (Qwen 4 sinh code -> Sandbox chạy đối chiếu trên CPU local)
+    # 5. Numeric Verifier (sinh code -> Sandbox đối chiếu)
     outputs["5_numeric_verifier"] = call_agent(
         "5_numeric_verifier",
         agents["5_numeric_verifier"],
         shared_context,
-        f"CHỨNG MINH CỦA PROVER (NEON):\n{outputs['3_prover']}\n\n"
-        f"KẾT QUẢ LOCAL CODE (GLM 5.3):\n{outputs['4_local_code']}\n\n{local_sandbox_log}\n\n"
+        f"CHỨNG MINH CỦA PROVER:\n{outputs['3_prover']}\n\n"
+        f"KẾT QUẢ LOCAL CODE:\n{outputs['4_local_code']}\n\n{local_sandbox_log}\n\n"
         f"Hãy kiểm chứng số học độc lập tại các điểm biên và viết script đối chiếu.",
         run_dir,
         dry_run=args.dry_run,
@@ -202,27 +242,27 @@ def main():
     (run_dir / "5_numeric_sandbox.log").write_text(numeric_sandbox_log, encoding="utf-8")
     print(f"    Kết quả Sandbox (Numeric Verifier):\n{numeric_sandbox_log}")
 
-    # 6. Auditor (Gemini 4 Carbon)
+    # 6. Auditor
     outputs["6_auditor"] = call_agent(
         "6_auditor",
         agents["6_auditor"],
         shared_context,
         f"HÃY THẨM ĐỊNH TOÀN BỘ KẾT QUẢ SAU:\n\n"
-        f"=== PROVER (NEON) ===\n{outputs['3_prover']}\n\n"
-        f"=== LOCAL CODE (GLM 5.3) ===\n{outputs['4_local_code']}\n{local_sandbox_log}\n\n"
-        f"=== NUMERIC VERIFIER (QWEN 4) ===\n{outputs['5_numeric_verifier']}\n{numeric_sandbox_log}",
+        f"=== PROVER ===\n{outputs['3_prover']}\n\n"
+        f"=== LOCAL CODE ===\n{outputs['4_local_code']}\n{local_sandbox_log}\n\n"
+        f"=== NUMERIC VERIFIER ===\n{outputs['5_numeric_verifier']}\n{numeric_sandbox_log}",
         run_dir,
         dry_run=args.dry_run,
     )
 
-    # 7. LaTeX Integrator (Sonnet 5.5)
+    # 7. LaTeX Integrator
     outputs["7_latex"] = call_agent(
         "7_latex",
         agents["7_latex"],
         shared_context,
         f"Biên tập thành mã LaTeX chuẩn xác và tổng kết trạng thái dựa trên kết quả của Prover và Auditor:\n\n"
-        f"=== CHỨNG MINH (PROVER - NEON) ===\n{outputs['3_prover']}\n\n"
-        f"=== THẨM ĐỊNH (AUDITOR - CARBON) ===\n{outputs['6_auditor']}",
+        f"=== CHỨNG MINH (PROVER) ===\n{outputs['3_prover']}\n\n"
+        f"=== THẨM ĐỊNH (AUDITOR) ===\n{outputs['6_auditor']}",
         run_dir,
         dry_run=args.dry_run,
     )
@@ -233,11 +273,12 @@ def main():
         f"# BÁO CÁO PHIÊN NGHIÊN CỨU — {prob_cfg['title']}\n\n"
         f"**Thời gian:** {ts}\n**Chế độ:** {'DRY-RUN (Kiểm thử luồng)' if args.dry_run else 'LIVE (OpenRouter + Local Sandbox)'}\n"
         f"**Mục tiêu:** {goal}\n\n---\n\n"
-        f"## 1. Chỉ thị Chủ điều hành (Fable 5.2)\n{outputs['1_commander']}\n\n---\n\n"
-        f"## 2. Phân rã Điều phối (Opus 5.5)\n{outputs['2_coordinator']}\n\n---\n\n"
-        f"## 3. Thẩm định của Auditor (Gemini 4 Carbon)\n{outputs['6_auditor']}\n\n---\n\n"
-        f"## 4. Mã LaTeX tích hợp & Tổng kết (Sonnet 5.5)\n{outputs['7_latex']}\n\n---\n\n"
-        f"## 5. Log Sandbox (Local GLM 5.3 & Qwen 4)\n```text\n{local_sandbox_log}\n\n{numeric_sandbox_log}\n```\n",
+        f"## 1. Chỉ thị Chủ điều hành ({agents['1_commander']['model']})\n{outputs['1_commander']}\n\n---\n\n"
+        f"## 2. Phân rã Điều phối ({agents['2_coordinator']['model']})\n{outputs['2_coordinator']}\n\n---\n\n"
+        f"## 3. Chứng minh của Prover ({agents['3_prover']['model']})\n{outputs['3_prover']}\n\n---\n\n"
+        f"## 4. Thẩm định của Auditor ({agents['6_auditor']['model']})\n{outputs['6_auditor']}\n\n---\n\n"
+        f"## 5. Mã LaTeX tích hợp & Tổng kết ({agents['7_latex']['model']})\n{outputs['7_latex']}\n\n---\n\n"
+        f"## 6. Log Sandbox (Local Code & Numeric Verifier)\n```text\n{local_sandbox_log}\n\n{numeric_sandbox_log}\n```\n",
         encoding="utf-8",
     )
 
@@ -259,7 +300,7 @@ def main():
             f"\n## Phiên `{ts}` — Bài toán {args.problem} ({'DRY-RUN' if args.dry_run else 'LIVE'})\n"
             f"- **Thư mục output:** `{run_dir.as_posix()}`\n"
             f"- **Mục tiêu:** {goal}\n"
-            f"- **Tóm tắt & Đề xuất cập nhật trạng thái (Sonnet 5.5):**\n\n{outputs['7_latex']}\n\n---\n"
+            f"- **Tóm tắt & Đề xuất cập nhật trạng thái (LaTeX Integrator):**\n\n{outputs['7_latex']}\n\n---\n"
         )
 
     if not args.dry_run:
@@ -270,13 +311,15 @@ def main():
                 ckpt_data = json.loads(ckpt_path.read_text(encoding="utf-8"))
             except json.JSONDecodeError:
                 ckpt_data = {}
-        ckpt_data.setdefault("run_history", []).append({
-            "timestamp": ts,
-            "problem": args.problem,
-            "run_dir": run_dir.as_posix(),
-            "goal": goal,
-            "auditor_summary": outputs["6_auditor"][:1500],
-        })
+        ckpt_data.pop("run_history", None)  # lịch sử chuyển sang logs/run_history.jsonl
+        with (logs_dir / "run_history.jsonl").open("a", encoding="utf-8") as hf:
+            hf.write(json.dumps({
+                "timestamp": ts,
+                "problem": args.problem,
+                "run_dir": run_dir.as_posix(),
+                "goal": goal,
+                "auditor_summary": outputs["6_auditor"][:1500],
+            }, ensure_ascii=False) + "\n")
         ckpt_data["last_updated"] = ts
         ckpt_data["latest_run_dir"] = run_dir.as_posix()
         ckpt_path.write_text(json.dumps(ckpt_data, ensure_ascii=False, indent=2), encoding="utf-8")

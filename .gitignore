@@ -14,3 +14,8 @@ output/
 *.log
 .DS_Store
 Thumbs.db
+# Chẩn đoán & sao lưu (có thể chứa user_id / key)
+diag_*.json
+*.backup
+*.backup.yaml
+ping_models.py

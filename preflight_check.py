@@ -1,4 +1,4 @@
-﻿import json
+import json
 import os
 import sys
 import urllib.request
@@ -10,7 +10,7 @@ for _v in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS", "NUMEXP
 
 import yaml
 from orchestrator import load_env_file, resolve_openrouter_key
-from context_packer import build_shared_system_context
+from context_packer import build_shared_system_context, MISSING_TEX_TAG, MISSING_TEX_DIR_TAG
 from prompts import SYSTEM_ROLES
 from sandbox_executor import run_verification_script
 
@@ -75,6 +75,16 @@ def main():
             status("FAIL", f"Thiếu hoặc rỗng: {req_file.as_posix()}")
             errors += 1
 
+    # Ký tự NUL / placeholder chưa điền trong core/
+    for cf in sorted(core_dir.glob("*.md")):
+        raw = cf.read_bytes()
+        if b"\x00" in raw:
+            status("FAIL", f"{cf.as_posix()} chứa ký tự NUL (\\x00) — sẽ làm hỏng request API")
+            errors += 1
+    spec = core_dir / "00_PROBLEM_SPEC.md"
+    if spec.exists() and "[DÁN PHÁT BIỂU" in spec.read_text(encoding="utf-8-sig"):
+        status("WARN", "00_PROBLEM_SPEC.md vẫn là mẫu trống — Agent sẽ không có phát biểu định lý chuẩn")
+
     ckpt_file = core_dir / "02_CHECKPOINT.json"
     if ckpt_file.exists():
         try:
@@ -111,6 +121,8 @@ def main():
         acfg = agents_cfg[k]
         provider = acfg.get("provider", "openrouter")
         raw_model = acfg["model"]
+        if acfg.get("max_tokens", 4096) < 16000:
+            status("WARN", f"{k}: max_tokens={acfg.get('max_tokens')} thấp cho model suy luận — dễ bị rỗng/cắt đầu ra")
         base_model = raw_model.split(":")[0]
         if provider != "openrouter":
             status("WARN", f"{k}: đang đặt provider='{provider}' ({raw_model}) — cần bật server local trước khi chạy")
@@ -130,9 +142,12 @@ def main():
         try:
             packed = build_shared_system_context(cfg, pid)
             est_tokens = len(packed) // 4
-            missing_tex = packed.count("[CẢNH BÁO: Chưa có file")
-            note = f" (thiếu {missing_tex} file .tex rời, dùng bản tóm tắt context/)" if missing_tex else ""
-            status("PASS", f"Bài toán {pid}: {len(packed):,} ký tự (~{est_tokens:,} tokens){note}")
+            if MISSING_TEX_DIR_TAG in packed:
+                status("WARN", f"Bài toán {pid}: {len(packed):,} ký tự (~{est_tokens:,} tokens) — KHÔNG có thư mục tex_sections/, thiếu toàn bộ file .tex")
+            elif packed.count(MISSING_TEX_TAG):
+                status("WARN", f"Bài toán {pid}: {len(packed):,} ký tự (~{est_tokens:,} tokens) — thiếu {packed.count(MISSING_TEX_TAG)} file .tex")
+            else:
+                status("PASS", f"Bài toán {pid}: {len(packed):,} ký tự (~{est_tokens:,} tokens), đủ file .tex")
         except Exception as e:
             status("FAIL", f"Bài toán {pid} lỗi đóng gói ngữ cảnh: {e}")
             errors += 1

@@ -12,43 +12,43 @@ agents:
     provider: openrouter
     model: anthropic/claude-fable-5.2
     temperature: 0.25
-    max_tokens: 4096
+    max_tokens: 32000
   2_coordinator:
     name: Dieu phoi (Coordinator & Lemma Decomposer)
     provider: openrouter
     model: anthropic/claude-opus-5.5
     temperature: 0.2
-    max_tokens: 6144
+    max_tokens: 32000
   3_prover:
     name: Prover (Analytical Prover)
     provider: openrouter
     model: google/gemini-4-neon
     temperature: 0.2
-    max_tokens: 8192
+    max_tokens: 32000
   4_local_code:
     name: Local Code (Simulation & Symbolic Script)
     provider: openrouter
     model: z-ai/glm-5.3
     temperature: 0.1
-    max_tokens: 4096
+    max_tokens: 32000
   5_numeric_verifier:
     name: Numeric Verifier (Independent Numerical Audit)
     provider: openrouter
     model: qwen/qwen4-max
     temperature: 0.1
-    max_tokens: 4096
+    max_tokens: 32000
   6_auditor:
     name: Auditor (Rigor, Quantifier & Citation Auditor)
     provider: openrouter
     model: google/gemini-4-carbon
     temperature: 0.1
-    max_tokens: 8192
+    max_tokens: 32000
   7_latex:
     name: LaTeX Integrator (Manuscript Editor & State Summary)
     provider: openrouter
     model: anthropic/claude-sonnet-5.5
     temperature: 0.1
-    max_tokens: 8192
+    max_tokens: 32000
 open_problems:
   1:
     title: 'Bai toan 1: Phan phoi cuc bo quanh khuyet tat (LV-Palm) va quanh nguong
