@@ -1,0 +1,56 @@
+[
+  {
+    "time": "2026-11-24T15:32:44.669787",
+    "model": "anthropic/claude-opus-5.5",
+    "provider": null,
+    "result": "FAIL 403",
+    "body": "{\"error\":{\"message\":\"The request is prohibited due to a violation of provider Terms Of Service.\",\"code\":403,\"metadata\":{\"provider_name\":null,\"previous_errors\":[{\"code\":403,\"message\":\"The request is prohibited due to a violation of provider Terms Of Service.\"},{\"code\":403,\"message\":\"The request is prohibited due to a violation of provider Terms Of Service.\"},{\"code\":403,\"message\":\"The request is prohibited due to a violation of provider Terms Of Service.\"},{\"code\":403,\"message\":\"The request is prohibited due to a violation of provider Terms Of Service.\"}]}},\"user_id\":\"user_3MU5LpMslA0O1SguNliuae1dRdg\"}"
+  },
+  {
+    "time": "2026-11-24T15:32:45.522493",
+    "model": "anthropic/claude-opus-5.5",
+    "provider": "anthropic",
+    "result": "FAIL 403",
+    "body": "{\"error\":{\"message\":\"The request is prohibited due to a violation of provider Terms Of Service.\",\"code\":403,\"metadata\":{\"provider_name\":null}},\"user_id\":\"user_3MU5LpMslA0O1SguNliuae1dRdg\"}"
+  },
+  {
+    "time": "2026-11-24T15:32:45.674803",
+    "model": "anthropic/claude-fable-5.2",
+    "provider": null,
+    "result": "FAIL 403",
+    "body": "{\"error\":{\"message\":\"The request is prohibited due to a violation of provider Terms Of Service.\",\"code\":403,\"metadata\":{\"provider_name\":null,\"previous_errors\":[{\"code\":403,\"message\":\"The request is prohibited due to a violation of provider Terms Of Service.\"},{\"code\":403,\"message\":\"The request is prohibited due to a violation of provider Terms Of Service.\"}]}},\"user_id\":\"user_3MU5LpMslA0O1SguNliuae1dRdg\"}"
+  },
+  {
+    "time": "2026-11-24T15:32:45.818139",
+    "model": "anthropic/claude-sonnet-5.5",
+    "provider": null,
+    "result": "FAIL 403",
+    "body": "{\"error\":{\"message\":\"The request is prohibited due to a violation of provider Terms Of Service.\",\"code\":403,\"metadata\":{\"provider_name\":null,\"previous_errors\":[{\"code\":403,\"message\":\"The request is prohibited due to a violation of provider Terms Of Service.\"},{\"code\":403,\"message\":\"The request is prohibited due to a violation of provider Terms Of Service.\"},{\"code\":403,\"message\":\"The request is prohibited due to a violation of provider Terms Of Service.\"},{\"code\":403,\"message\":\"The request is prohibited due to a violation of provider Terms Of Service.\"}]}},\"user_id\":\"user_3MU5LpMslA0O1SguNliuae1dRdg\"}"
+  },
+  {
+    "time": "2026-11-24T15:32:46.010163",
+    "model": "google/gemini-4-neon",
+    "provider": null,
+    "result": "FAIL 403",
+    "body": "{\"error\":{\"message\":\"The request is prohibited due to a violation of provider Terms Of Service.\",\"code\":403,\"metadata\":{\"provider_name\":null,\"previous_errors\":[{\"code\":403,\"message\":\"The request is prohibited due to a violation of provider Terms Of Service.\"}]}},\"user_id\":\"user_3MU5LpMslA0O1SguNliuae1dRdg\"}"
+  },
+  {
+    "time": "2026-11-24T15:32:46.203915",
+    "model": "google/gemini-4-carbon",
+    "provider": null,
+    "result": "FAIL 403",
+    "body": "{\"error\":{\"message\":\"The request is prohibited due to a violation of provider Terms Of Service.\",\"code\":403,\"metadata\":{\"provider_name\":null,\"previous_errors\":[{\"code\":403,\"message\":\"The request is prohibited due to a violation of provider Terms Of Service.\"}]}},\"user_id\":\"user_3MU5LpMslA0O1SguNliuae1dRdg\"}"
+  },
+  {
+    "time": "2026-11-24T15:32:46.791371",
+    "model": "qwen/qwen4-max",
+    "provider": null,
+    "result": "PASS"
+  },
+  {
+    "time": "2026-11-24T15:32:49.124149",
+    "model": "z-ai/glm-5.3",
+    "provider": null,
+    "result": "PASS"
+  }
+]
